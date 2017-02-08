@@ -1,0 +1,239 @@
+---
+swagger: "2.0"
+info:
+  version: "0.1"
+  title: "Менеджер экспериментов NS3"
+host: "ns3srv.nzpr.io"
+basePath: "/v1"
+schemes:
+- "http"
+- "https"
+paths:
+  /exp/init:
+    get:
+      description: "Конструирует новый эксперимент из git репо. 1. в подготовленны\
+        й docker образ делается git pull 2. собирается бинарник 3. На выходе имеем\
+        \ docker образ с симуляцией. Как запускать образ с параметрами ты уже разо\
+        брался"
+      operationId: "exp_init_get"
+      parameters:
+      - name: "gitrepo"
+        in: "query"
+        description: "Link to git repo (e.g. git@github.com:nzpr/ns3srv.git)"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "В ответ выдается json массив с названиями параметров, кото\
+            рые принимает симуляция. Параметры сервер определяет через вызов бинар\
+            ника с ключом --getArgs. Обработка этого ключа уже написана. Влад, спр\
+            оси ее у меня. Антон, ты по этой информации заполняешь табличку Переме\
+            нные параметры"
+          schema:
+            type: "string"
+            title: "string"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /exp/{id}/setvariables:
+    post:
+      description: "Задать значения переменных параметров. Вызывается по нажатию к\
+        нопки Отправить на кластер."
+      operationId: "exp_id_setvariables_post"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id эксперимента"
+        required: true
+        type: "string"
+        format: "string"
+      - in: "body"
+        name: "params"
+        description: "json строка с параметрами"
+        required: true
+        schema:
+          type: "string"
+          format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            type: "string"
+            title: "status"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /exp/{id}/start:
+    get:
+      description: "Запустить эксперимент (до этого должен быть подготовлен docker\
+        \ образ через init). Антону - Вызывается по нажатию кнопки Запустить в спи\
+        ске симуляций. Владу - симуляции отправляются на кластер,  число одновреме\
+        нно запущенных симуляций определяется доступным числом процессоров. Пока ч\
+        то пусть будет 2 процесса за раз."
+      operationId: "exp_id_start_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id эксперимента"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            type: "string"
+            title: "status"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /exp/{id}/stop:
+    get:
+      description: "Остановить эксперимент. Новые симуляции не отсылаются на класт\
+        ер. Те, что уже запущены - прибиваются, если есть такая возможность."
+      operationId: "exp_id_stop_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id эксперимента"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            type: "string"
+            title: "status"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /exp/{id}/results:
+    get:
+      description: "выдает json объект с результатами эксперимента. Эти результаты\
+        \ собираются от каждой симуляции в ракмах эксперимента. Пока что пускай ре\
+        зультатом будет одно число - коэффициент доставки пакетов. Антону - тебе н\
+        ужно будет рисовать графики по этим результатам."
+      operationId: "exp_id_results_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id эксперимента"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            type: "string"
+            title: "status"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /exp/{id}:
+    get:
+      description: "Получить информацию о конкретном эксперименте."
+      operationId: "exp_id_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id эксперимента"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: "#/definitions/Experiment"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /sim/{id}:
+    get:
+      description: "Получить информацию о конкретной симуляции."
+      operationId: "sim_id_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id симуляции"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            $ref: "#/definitions/Simulation"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /sim/{id}/results:
+    get:
+      description: "выдает json объект с результатами эксперимента. Эти результаты\
+        \ собираются от каждой симуляции в ракмах эксперимента. Пока что пускай ре\
+        зультатом будет одно число - коэффициент доставки пакетов. Антону - тебе н\
+        ужно будет рисовать графики по этим результатам."
+      operationId: "sim_id_results_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id эксперимента"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            type: "string"
+            title: "status"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+  /sim/{id}/vizconnect:
+    get:
+      description: "Поделючение к потоку данных симуляции для визуализации\n"
+      operationId: "sim_id_vizconnect_get"
+      parameters:
+      - name: "id"
+        in: "path"
+        description: "id симуляции"
+        required: true
+        type: "string"
+        format: "string"
+      responses:
+        200:
+          description: "Successful response"
+          schema:
+            type: "string"
+            title: "token"
+      x-swagger-router-controller: "swagger_server.controllers.default_controller"
+definitions:
+  Experiment:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      status:
+        type: "integer"
+        description: "0 - подготовка (клонирование, сборка бинарника), 1 - запущен\
+          , 2 - закончен, 3 - приостановлен, 4 - ошибка, не удалось подготовить эк\
+          сперимент"
+      varibles:
+        type: "string"
+        description: "Переменные параметры эксперимента в фрмате json {var1:[1,2,3],var2:[0.1,0.3]\
+          \ и т.п.}. Это вводит пользователь во фронтенде."
+      created_at:
+        type: "string"
+  Simulation:
+    type: "object"
+    properties:
+      id:
+        type: "integer"
+        format: "int64"
+      parameters:
+        type: "string"
+        description: "Значения переменных параметров в этой симуляции в фрмате json\
+          \ {var1:[1,2,3],var2:[0.1,0.3] и т.п.}"
+      parentExperimentId:
+        type: "integer"
+        format: "int64"
+        description: "id эксперимента, которому принадлежит эта симулция"
+      state:
+        type: "integer"
+        description: "Запущено|В очереди|Завершено успешно|Завершено с ошибкой"
+      inner_time:
+        type: "integer"
+        description: "Текущее внетреннее время симуляции"
+      exit_code:
+        type: "integer"
+        description: "если симуляция завершилась с ошибкой - код ошибки. Потом при\
+          думать как реализовать получение кода."
